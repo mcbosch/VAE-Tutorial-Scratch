@@ -69,6 +69,11 @@ def split(data, train_size = 0.8, seed = None):
 
         return data_train, data_test
 
+def random_batch(data, batch):
+    N = len(data)
+    I = np.random.sample(range(0,N), batch)
+    return [data[i] for i in I]
+
 def to_one_hot(n, label):
         v = np.zeros(shape = (n,))
         v[label] = 1

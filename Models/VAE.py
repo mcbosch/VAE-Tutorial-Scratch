@@ -46,7 +46,18 @@ class VAE:
             [ 0.12 ... 0.7] 
 
     """
-    def __init__(self, n_input, n_hidden, dimensions, simetric=True, latent_dim = 10):
+    # TODO
+    def __init__(self, 
+                 n_input, 
+                 n_hidden_1, 
+                 n_hidden_2,
+                 dimensions_1 = [], 
+                 mu_activation = "ReLU",
+                 logvar_activation = "ReLU",
+                 activations_1 = [],
+                 dimensions_2 = [],
+                 activations_2 = [], 
+                 latent_dim = 10):
         """
         Parameters:
             · n_input: dimension of the input
@@ -54,21 +65,44 @@ class VAE:
         Returns:
             · An AutoEncoder object
         """
-        if not simetric:
-              raise TypeError("\033[1;31mNOT IMPLEMENTED YET\033[0m")
+        self.encoder = Sequence([])
+        self.decoder = Sequence([])
 
-        self.encoder = Sequence([
+        if activations_1 == []:
+            print("\033[1;31mWARNING\033[0m - There are no activation functions speciefieds in encoder NN, we use ReLU")
+            activations_1 = ['ReLU' for _ in range(n_hidden_1)]
+        
+        for i in range(n_hidden_1-1):
+            if i == 0:
+                self.encoder.add(LinearLayer(
+                         n_input, dimensions_1[i], activation = activations_1[i]
+                    ))
+            else:
+                self.encoder.add(LinearLayer(
+                         dimensions_1[i-1],dimensions_1[i], activation = activations_1[i]
+                    ))
+        self.mu = LinearLayer(dimensions_1[-1], latent_dim, activation = mu_activation)
+        self.logvar = LinearLayer(dimensions_1[-1], latent_dim, activation = logvar_activation)
 
-        ])
-        self.mu = LinearLayer()
-        self.decoder = Sequence([
-              
-        ])
+        if activations_2 == []:
+            print("\033[1;31mWARNING\033[0m - There are no activation functions speciefieds in decoder NN, we use ReLU")
+            activations_2 = ['ReLU' for _ in range(n_hidden_2)]
+
+        for i in range(n_hidden_2):
+            if i == 0:
+                self.encoder.add(LinearLayer(
+                         latent_dim, dimensions_2[i], activation = activations_2[i]
+                    ))
+            else:
+                self.encoder.add(LinearLayer(
+                         dimensions_2[i-1], dimensions_2[i], activation = activations_2[i]
+                    ))
 
         self.latent_dim = latent_dim
         self.latent_vars = np.zeros(shape = (latent_dim, ))
         self.epsilon = np.zeros(shape = (latent_dim, ))
-    # TODO
+
+    # DONE
     def forward(self, x):
             mu, log_sigma = self.encoder.forward(x)
             Sigma = to_cov_matrix(log_sigma)
@@ -77,6 +111,14 @@ class VAE:
             z = mu + Sigma @ self.epsilon
             
             return self.decoder.forward(z)
+    
+    # TODO
+    def loss(self, x):
+        pass
+    
+    # TODO
+    def train(self, D, step = 0.01, batch = 10, epochs = 100):
+         pass
 
     # TODO
     def __str__(self):

@@ -153,7 +153,8 @@ class LinearLayer:
                  n_cels_in,
                  n_cels_out, 
                  bias = True, 
-                 activation = 'ReLU'):
+                 activation = 'ReLU',
+                 batch = 1):
         """
         Parameters
         ----------
@@ -172,7 +173,7 @@ class LinearLayer:
         
         # Initialize weights randomly and normalize
         limit = np.sqrt(1 / self.n_in)
-        self.weights = np.random.randn(self.n_out, self.n_in) * limit
+        self.weights = np.random.randn(self.n_in, self.n_out) * limit
         self.bias = np.random.randn(self.n_out) * limit
 
         self.activation = NeuralNetwork.AF[activation]
@@ -181,24 +182,24 @@ class LinearLayer:
         self.x = np.zeros(shape=(self.n_in,))
         self.z = np.zeros(shape=(self.n_out,))
         self.a = np.zeros(shape=(self.n_out,))
-        self.deltas = np.zeros(shape=(self.n_out,))
+        self.cache = np.zeros(shape=(self.n_out, batch)) # The error of a Neuron
     
     # DONE
     def forward(self, input):
         # Update values of the neurons
         self.x = input
-        self.z = self.weights @ input + self.bias
+        self.z = input @ self.weights + self.bias 
         self.a = self.activation(self.z)
         return self.a
     
     # DONE
     def backpropagation(self, d):
-        self.deltas =  d * self.activation.partial(self.z)
-        return self.weights.T @ self.deltas
+        self.cache =  d * self.activation.partial(self.z)
+        return self.weights.T @ self.cache
 
     def update_parameters(self, learning_rate):
-        self.weights = self.weights - learning_rate*np.outer(self.deltas, self.x)
-        self.bias = self.bias - learning_rate*self.deltas
+        self.weights = self.weights - learning_rate*np.outer(self.cache, self.x)
+        self.bias = self.bias - learning_rate*self.cache
 
     # DONE
     def __str__(self):

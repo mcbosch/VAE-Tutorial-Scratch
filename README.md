@@ -12,6 +12,6 @@ I hope this repository helps anyoene in their path on untherstanding *Variationa
 
 ## Variational Autoencoders Overview
 
-
+## Formal Explanation of Backpropagation in VAEs
 ## Bibliography
  
