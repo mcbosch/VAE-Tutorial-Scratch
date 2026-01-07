@@ -1,5 +1,6 @@
 import numpy as np
 
+# ================== ACTIVATION FUNCTIONS
 
 # DONE
 class ReLU:
@@ -32,10 +33,13 @@ class Sigmoind:
     def __str__(self):
         return "Sigmoind"
 
+# DONE
 class Softmax:
     def __call__(self, x):
-        exps = np.exp(x - np.max(x))  # numéricamente estable
-        return exps / np.sum(exps)
+        exps = np.exp(x)  # Maybe we have to add more estability
+        if len(x.shape) == 1:
+            return exps / np.sum(exps)
+        return (exps.T / np.sum(exps, axis=1)).T
     
     def partial(self, x):
          return np.diag(x) - np.outer(x, x)
@@ -43,16 +47,59 @@ class Softmax:
     def __str__(self):
         return "Softmax"
 
-class CrossEntropy:
-    def __call__(self, y_pred, y_true):
-        return -np.sum(y_true * np.log(y_pred + 1e-12))  # evitar log(0)
+
+# =================== LOSS FUNCTIONS
     
-    def partial(self, y_pred, y_true):
-        return y_pred - y_true  # si se usa con softmax
+# DONE
+class CrossEntropy:
+    """
+    The CrossEntropy object is a callable object that computes the CrossEntropy loss of a prediction and it's real value.
+    """
+
+    def __call__(self, *args):
+        """
+        Function that returns the cross entropy between a predicted vector and the real vector.
+        The input a batch of different vectors, the input has to be in a matrix in which each row correspond to a vector.
+        Parameters
+        ----------
+            > y_pred: Predicted vector (or batch of vectors)
+            > y_true: Real vector (or batch of vectors)
+        Returns
+        -------
+            Returns the CrossEntropy of each vector
+        """
+        assert len(args) > 0, f"Two parameters expected; just {len(args)} given"
+        y_pred, y_true = args[0], args[1]
+        # We check the dimensionality (if it comes as )
+        if len(y_pred.shape) > 1:
+            # We have a batch of vectors; each row is a datapoint
+            return -np.sum(y_true * np.log(y_pred + 1e-13), axis = 1)  # evitar log(0)
+        else:
+            return -np.sum(y_true * np.log(y_pred + 1e-13))
+
+    def partial(self, *args, activated_neurons=True):
+    
+        assert len(args) > 0, f"Two parameters expected; just {len(args)} given"
+        y_pred, y_true = args[0], args[1]
+        if activated_neurons: # Computes the partial with respect the activated neurons
+            pass
+        else: # Computes the partial with respect the non-activated neurons when we use as activation function a Softmax
+            return y_pred - y_true
        
     def __str__(self):
         return "CrossEntropy"
 
+# TODO
+class SqEuclideanDistance:
+    pass
+
+# TODO
+class KullbackLeigberg:
+    pass
+
+# =================== MANIPULATION OF DATA FUNCTIONS
+
+# TODO - test
 def split(data, train_size = 0.8, seed = None):
         if seed != None: 
             np.random.seed(seed)
@@ -69,6 +116,7 @@ def split(data, train_size = 0.8, seed = None):
 
         return data_train, data_test
 
+# TODO - test
 def random_batches(data, batch_size):
     """
     Randomly partitions data into batches of size batch_size.
@@ -97,11 +145,13 @@ def random_batches(data, batch_size):
         batches.append(batch)
     return batches
 
+# TODO - test
 def to_one_hot(n, label):
         v = np.zeros(shape = (n,))
         v[label] = 1
         return v
 
+# TODO - test
 def to_cov_matrix(log_var, dim_matrix = 1):
     if len(log_var) == 1:
         return np.exp(log_var) * np.eye(dim_matrix) 

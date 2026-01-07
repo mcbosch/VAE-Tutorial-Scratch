@@ -7,4 +7,4 @@ def Sequence_tst():
     pass
 
 def NeuralNetwork_tst():
-    pass
+    raise TypeError("This test it's not implemented yet")

@@ -1,6 +1,6 @@
 import numpy as np
-from utils import *
-from NN import *
+from Models.utils import *
+from Models.NN import *
 """
 If the reader doesn't have good knowledge of Variational AutoEncoders we recomend reeding all the comments. It has a brew eplanation. Also you can read the README.md file for detailed information. 
 """
@@ -105,7 +105,8 @@ class VAE:
         self.latent_dim = latent_dim
         self.latent_vars = np.zeros(shape = (latent_dim, ))
         self.epsilon = np.zeros(shape = (latent_dim, ))
-        self.loss = CrossEntropy()
+        self.loss = CrossEntropy()  # We have to define a loss that has the ELBO 
+
     # DONE
     def forward(self, x):
             mu, log_sigma = self.encoder.forward(x)
@@ -117,7 +118,7 @@ class VAE:
             return self.decoder.forward(z)
     
     
-    # TODO
+    # DONE
     def train(self, D, step = 0.01, batch = 10, epochs = 100):
         
         results = {}
@@ -140,6 +141,7 @@ class VAE:
 
                 delta_combined = delta_mu@self.mu.weights.T + delta_var@self.logvar.weights.T
                 self.encoder.backpropagate(step, delta = delta_combined, update = True)
+    
     # TODO      
     def __str__(self):
         raise TypeError("\033[1;31mFUNCTION NOT IMPLEMENTED\033[0m")

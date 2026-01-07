@@ -1,12 +1,12 @@
 import numpy as np
-from utils import *
+from Models.utils import *
 
 """
 This script defines a general NeuralNetwork class. We do it in a general way so we have a flexible model with an easy way of tracking errors. See the README file to more information of how this class works.
 
 Example of ussage: 
 """
-
+# TODO - test
 class NeuralNetwork:
 
     # Define which Loss and Activations functions supports our Neural Network
@@ -15,7 +15,7 @@ class NeuralNetwork:
     
     AF = {"ReLU": ReLU(), "Sigmoind": Sigmoind(), "Softmax": Softmax()}
 
-    # DONE
+    # DONE TODO - test
     def __init__(self, n_in, n_out, n_layers, dimensions, activations):
         """
         Parameters
@@ -62,13 +62,13 @@ class NeuralNetwork:
         self.n_trainable_parameters = 0
         for i in range(n_layers): self.n_trainable_parameters += self.layers[i].n_trainable_parameters
     
-    # DONE
+    # DONE TODO - test
     def forward(self, input):
         for l in self.layers:
             input = l.forward(input)
         return input
 
-    # DONE
+    # DONE TODO - test
     def train(self, data, epochs, learning_rate=0.1, loss=CrossEntropy()):
         """
         Parameters
@@ -107,7 +107,7 @@ class NeuralNetwork:
                 # Update weights
                 for l in self.layers: l.update_parameters(learning_rate)
 
-    # DONE
+    # DONE TODO - test
     def test(self, data):
         """
         Parameters
@@ -126,13 +126,13 @@ class NeuralNetwork:
             acc +=  pred == y
         return acc/n
     
-    # DONE
+    # DONE TODO - test
     def to_one_hot(self, label):
         v = np.zeros(shape = (self.n_out,))
         v[label] = 1
         return v
 
-    # DONE
+    # DONE TODO - test
     def __str__(self):
         s = "Neural Network\n"
         ml = len(s)
@@ -144,11 +144,11 @@ class NeuralNetwork:
             s += '\t'+ str(l) + '\n'
         s += "-"*ml
         return s
-    
-        
+
+# TODO - test 
 class LinearLayer:
 
-    # DONE
+    # DONE TODO - test
     def __init__(self,
                  n_cels_in,
                  n_cels_out, 
@@ -184,7 +184,7 @@ class LinearLayer:
         self.a = np.zeros(shape=(self.n_out,))
         self.cache = np.zeros(shape=(self.n_out, batch)) # The error of a Neuron
     
-    # DONE
+    # DONE TODO - test
     def forward(self, input):
         # Update values of the neurons
         self.x = input
@@ -192,11 +192,12 @@ class LinearLayer:
         self.a = self.activation(self.z)
         return self.a
     
-    # DONE
+    # DONE TODO - test
     def backpropagation(self, d):
         self.cache =  d * self.activation.partial(self.z)
         return self.cache @ self.weights.T
 
+    # DONE TODO - test
     def update_parameters(self, learning_rate):
         # Verify if we are working by batches
         self.weights = self.weights - learning_rate*(self.x.T @ self.cache)
@@ -204,13 +205,16 @@ class LinearLayer:
             self.bias = self.bias - learning_rate* self.cache
         else:
             self.bias = self.bias - learning_rate* np.sum(self.cache, axis=0)
-    # DONE
+    
+    # DONE TODO - test
     def __str__(self):
         s = f"dim(\033[1;33m{self.n_in}\033[0m) -- Fully Conected --> dim(\033[1;33m{self.n_out}\033[0m) --> \033[1;32m{str(self.activation)}\033[0m"
         return s
 
-
+# TODO - test
 class Sequence:
+
+    # DONE TODO - test
     def __init__(self, layers):
         # Verify that the dimensions are correct
         n = len(layers)
@@ -223,14 +227,17 @@ class Sequence:
         self.size_in = layers[0].n_in
         self.size_out = layers[-1].n_out
 
+    # DONE TODO - test
     def forward(self, input):
         for l in self.layers:
             input = l.forward(input)
         return input
 
+    # DONE TODO - test
     def add(self, layer):
         self.layers.append(layer)
     
+    # DONE TODO - test
     def backpropagate(self, step, delta, update_parameters = False):
         for layer in self.layers:
             delta = layer.backpropagate(delta)
