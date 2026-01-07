@@ -195,12 +195,15 @@ class LinearLayer:
     # DONE
     def backpropagation(self, d):
         self.cache =  d * self.activation.partial(self.z)
-        return self.weights.T @ self.cache
+        return self.cache @ self.weights.T
 
     def update_parameters(self, learning_rate):
-        self.weights = self.weights - learning_rate*np.outer(self.cache, self.x)
-        self.bias = self.bias - learning_rate*self.cache
-
+        # Verify if we are working by batches
+        self.weights = self.weights - learning_rate*(self.x.T @ self.cache)
+        if len(self.cache.shape) == 1:
+            self.bias = self.bias - learning_rate* self.cache
+        else:
+            self.bias = self.bias - learning_rate* np.sum(self.cache, axis=0)
     # DONE
     def __str__(self):
         s = f"dim(\033[1;33m{self.n_in}\033[0m) -- Fully Conected --> dim(\033[1;33m{self.n_out}\033[0m) --> \033[1;32m{str(self.activation)}\033[0m"
@@ -227,3 +230,12 @@ class Sequence:
 
     def add(self, layer):
         self.layers.append(layer)
+    
+    def backpropagate(self, step, delta, update_parameters = False):
+        for layer in self.layers:
+            delta = layer.backpropagate(delta)
+            if update_parameters:
+                layer.update_parameters(learning_rate = step)
+            
+
+        

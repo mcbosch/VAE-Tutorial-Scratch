@@ -9,7 +9,7 @@ class ReLU:
 
     # DONE
     def partial(self, x):
-        return (np.array(x)>0).astype(float)
+        return (np.array(x)>0).astype(float) 
 
     # DONE
     def __str__(self):
@@ -69,10 +69,33 @@ def split(data, train_size = 0.8, seed = None):
 
         return data_train, data_test
 
-def random_batch(data, batch):
-    N = len(data)
-    I = np.random.sample(range(0,N), batch)
-    return [data[i] for i in I]
+def random_batches(data, batch_size):
+    """
+    Randomly partitions data into batches of size batch_size.
+    
+    Parameters
+    ----------
+    data : list
+        List of observations (any type).
+    batch_size : int
+        Size of each batch.
+    
+    Returns
+    -------
+    batches : list of lists
+        Random partition of data into batches.
+    """
+    data = list(data)  # make sure we can index
+    n = len(data)
+    
+    indices = np.random.permutation(n)
+    
+    batches = []
+    for start in range(0, n, batch_size):
+        batch_indices = indices[start:start + batch_size]
+        batch = [data[i] for i in batch_indices]
+        batches.append(batch)
+    return batches
 
 def to_one_hot(n, label):
         v = np.zeros(shape = (n,))

@@ -72,15 +72,19 @@ class VAE:
             print("\033[1;31mWARNING\033[0m - There are no activation functions speciefieds in encoder NN, we use ReLU")
             activations_1 = ['ReLU' for _ in range(n_hidden_1)]
         
-        for i in range(n_hidden_1-1):
-            if i == 0:
-                self.encoder.add(LinearLayer(
-                         n_input, dimensions_1[i], activation = activations_1[i]
-                    ))
-            else:
-                self.encoder.add(LinearLayer(
-                         dimensions_1[i-1],dimensions_1[i], activation = activations_1[i]
-                    ))
+        if n_hidden_1 == 0:
+            pass
+        else:
+            for i in range(n_hidden_1-1):
+                if i == 0:
+                    self.encoder.add(LinearLayer(
+                            n_input, dimensions_1[i], activation = activations_1[i]
+                        ))
+                else:
+                    self.encoder.add(LinearLayer(
+                            dimensions_1[i-1],dimensions_1[i], activation = activations_1[i]
+                        ))
+        
         self.mu = LinearLayer(dimensions_1[-1], latent_dim, activation = mu_activation)
         self.logvar = LinearLayer(dimensions_1[-1], latent_dim, activation = logvar_activation)
 
@@ -101,7 +105,7 @@ class VAE:
         self.latent_dim = latent_dim
         self.latent_vars = np.zeros(shape = (latent_dim, ))
         self.epsilon = np.zeros(shape = (latent_dim, ))
-
+        self.loss = CrossEntropy()
     # DONE
     def forward(self, x):
             mu, log_sigma = self.encoder.forward(x)
@@ -112,17 +116,33 @@ class VAE:
             
             return self.decoder.forward(z)
     
-    # TODO
-    def loss(self, x):
-        pass
     
     # TODO
     def train(self, D, step = 0.01, batch = 10, epochs = 100):
-         pass
+        
+        results = {}
+        for e in range(epochs):
+            M = random_batches(D, batch)
+            b = 0
+            results[e] = {}
+            for X in M:
+                A = self.forward(X)
+                loss = self.loss(A,X)
+                results[e][b] = loss
 
-    # TODO
+                delta_0 = self.decoder.backpropagate(step, self.loss.partial(A,X), update = True)
+
+                # We compute delta mu and delta var
+                delta_mu = self.mu.backpropagation(delta_0)
+                self.mu.update_parameters(learning_rate=step)
+                delta_var = self.mu.backpropagation(delta_0 * self.epsilon * np.exp(self.logvar.a))
+                self.logvar.update_parameters(learning_rate=step)
+
+                delta_combined = delta_mu@self.mu.weights.T + delta_var@self.logvar.weights.T
+                self.encoder.backpropagate(step, delta = delta_combined, update = True)
+    # TODO      
     def __str__(self):
-            pass
+        raise TypeError("\033[1;31mFUNCTION NOT IMPLEMENTED\033[0m")
 
     # TODO
     def description(self):

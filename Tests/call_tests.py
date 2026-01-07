@@ -1,5 +1,4 @@
-from NNs_tests import *
+from Tests.utils_test import *
 
-LinearLayer_tst()
-Sequence_tst()
-NeuralNetwork_tst()
+
+ReLU_tst()
