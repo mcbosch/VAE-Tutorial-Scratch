@@ -49,7 +49,9 @@ class Softmax:
 
 
 # =================== LOSS FUNCTIONS
-    
+"""
+The loss functions allows to receive as an input a matrix. Then it treats each row as an observation and computes the loss for that row. We do this to be able to work with batches. 
+"""
 # DONE
 class CrossEntropy:
     """
@@ -89,13 +91,65 @@ class CrossEntropy:
     def __str__(self):
         return "CrossEntropy"
 
-# TODO
+# DONE
 class SqEuclideanDistance:
-    pass
 
-# TODO
-class KullbackLeigberg:
-    pass
+    def __init__(self):
+        self.valid_respect_to = ["x","y"]
+    def __call__(self, *args):
+        X, Y = args[0], args[1]
+        dif = (X - Y)**2
+        if len(dif.shape) == 1:
+            return np.sum(0.5*dif)
+        else:
+            return 0.5*np.sum(dif,axis=1)
+        
+    def partial(self, *args, respect_to = "y"):
+        if respect_to not in self.valid_respect_to:
+            raise KeyError(f"Please introduce a valid input for 'respect_to'\nOptions: {self.valid_respect_to}")
+        
+        x, y = args[0], args[1]
+        if respect_to == "y":
+            return y-x
+        elif respect_to == "x":
+            return x-y
+
+    def __str__(self):
+        return "SqEuclideanDistance"
+
+# DONE TODO - test
+class KullbackLeibler:
+    """
+    Computes the Kullback-Leibler Divergence of two normals.
+    """
+    def __init__(self):
+        self.G = ["Diagonal", "Isotropic", "FullCov"]
+        self.partials_options = ["mean", "logvar"]
+    def __call__(self, *args, Gaussian_Variance = "Diagonal"):
+        if Gaussian_Variance not in self.G:
+            raise TypeError(f"Please introduce a valid parameter for Gaussian_Variance. \nPossible parameters: {self.G}")
+        if Gaussian_Variance == "Diagonal":
+            mu, logvar = args[0], args[1]
+            return 0.5*(np.sum(np.exp(logvar)**2) + np.sum(mu**2) - len(mu) - 2*np.sum(logvar))
+        elif Gaussian_Variance == "Isotropic":
+            pass
+        elif Gaussian_Variance == "FullCov":
+            pass
+
+    def partial(self, *args,  respect = "mean", Gaussian_Variance = "Diagonal"):
+        if Gaussian_Variance not in self.G:
+            raise TypeError(f"Please introduce a valid parameter for Gaussian_Variance. \nPossible parameters: {self.G}")
+        if respect not in self.partials_options:
+            raise TypeError(f"Please introduce a valid parameter for respect. \nPossible parameters: {self.partials_options}")
+        if Gaussian_Variance == "Diagonal":
+            meanX, logvarX = args[0], args[1]
+            if respect == "mean":
+                return meanX
+            if respect == "logvar":
+                return np.exp(logvarX)**2 - np.ones(shape=logvarX.shape)
+            
+    def __str__(self):
+        return "KullbackLeibler"
 
 # =================== MANIPULATION OF DATA FUNCTIONS
 
@@ -143,7 +197,7 @@ def random_batches(data, batch_size):
         batch_indices = indices[start:start + batch_size]
         batch = [data[i] for i in batch_indices]
         batches.append(batch)
-    return batches
+    return np.array(batches)
 
 # TODO - test
 def to_one_hot(n, label):

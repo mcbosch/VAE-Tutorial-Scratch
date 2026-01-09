@@ -1,4 +1,7 @@
 import numpy as np
+import sys 
+import os
+
 from Models.utils import *
 
 """
@@ -89,8 +92,9 @@ class NeuralNetwork:
         print(f"\033[1;33mTrainable Parameters:\033[0m\t{self.n_trainable_parameters}")
         print(f"\033[1;32mNumber of Epochs:\033[0m\t{epochs}\n")
         
-        for _ in range(epochs):
-            for x, y  in data:
+        for e in range(epochs):
+            for x in data:
+                
                 pred = self.forward(x)
                 y = self.to_one_hot(y)
                 
@@ -200,6 +204,7 @@ class LinearLayer:
     # DONE TODO - test
     def update_parameters(self, learning_rate):
         # Verify if we are working by batches
+        #breakpoint()
         self.weights = self.weights - learning_rate*(self.x.T @ self.cache)
         if len(self.cache.shape) == 1:
             self.bias = self.bias - learning_rate* self.cache
@@ -224,8 +229,8 @@ class Sequence:
         
         self.layers = layers
         self.n_layers = n
-        self.size_in = layers[0].n_in
-        self.size_out = layers[-1].n_out
+        self.size_in = layers[0].n_in if n != 0 else 0
+        self.size_out = layers[-1].n_out if n != 0 else 0
 
     # DONE TODO - test
     def forward(self, input):
@@ -239,10 +244,14 @@ class Sequence:
     
     # DONE TODO - test
     def backpropagate(self, step, delta, update_parameters = False):
-        for layer in self.layers:
-            delta = layer.backpropagate(delta)
+        #breakpoint()
+        n = len(self.layers)
+        for i in range(n):
+            layer = self.layers[n-1-i]
+            delta = layer.backpropagation(delta)
             if update_parameters:
                 layer.update_parameters(learning_rate = step)
+        return delta
             
 
         

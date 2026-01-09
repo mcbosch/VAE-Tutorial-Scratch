@@ -1,4 +1,6 @@
 import numpy as np
+import sys
+import os
 from Models.utils import *
 from Models.NN import *
 """
@@ -75,7 +77,7 @@ class VAE:
         if n_hidden_1 == 0:
             pass
         else:
-            for i in range(n_hidden_1-1):
+            for i in range(n_hidden_1):
                 if i == 0:
                     self.encoder.add(LinearLayer(
                             n_input, dimensions_1[i], activation = activations_1[i]
@@ -94,13 +96,16 @@ class VAE:
 
         for i in range(n_hidden_2):
             if i == 0:
-                self.encoder.add(LinearLayer(
+                self.decoder.add(LinearLayer(
                          latent_dim, dimensions_2[i], activation = activations_2[i]
                     ))
             else:
-                self.encoder.add(LinearLayer(
+                self.decoder.add(LinearLayer(
                          dimensions_2[i-1], dimensions_2[i], activation = activations_2[i]
                     ))
+        self.decoder.add(LinearLayer(
+            dimensions_2[-1], n_input, activations_2[-1]
+        ))
 
         self.latent_dim = latent_dim
         self.latent_vars = np.zeros(shape = (latent_dim, ))
@@ -109,11 +114,13 @@ class VAE:
 
     # DONE
     def forward(self, x):
-            mu, log_sigma = self.encoder.forward(x)
-            Sigma = to_cov_matrix(log_sigma)
+            a = self.encoder.forward(x)
+            mu = self.mu.forward(a)
+            log_sigma = self.logvar.forward(a)
+            Sigma = np.exp(log_sigma)
             
-            self.epsilon = np.random.multivariate_normal(np.zeros(shape = (self.latent_dim)),np.eye(self.latent_dim))
-            z = mu + Sigma @ self.epsilon
+            self.epsilon = np.array([np.random.multivariate_normal(np.zeros(shape =(self.latent_dim)),np.eye(self.latent_dim)) for _ in range(x.shape[0])])
+            z = mu + Sigma * self.epsilon
             
             return self.decoder.forward(z)
     
@@ -122,26 +129,46 @@ class VAE:
     def train(self, D, step = 0.01, batch = 10, epochs = 100):
         
         results = {}
+        mean_loss = []
         for e in range(epochs):
+            print(f"Epoch: {e}")
             M = random_batches(D, batch)
             b = 0
             results[e] = {}
+            
             for X in M:
+                #breakpoint()
+                
                 A = self.forward(X)
-                loss = self.loss(A,X)
+                EcD2 = SqEuclideanDistance()
+                KL = KullbackLeibler()
+                loss = 1/batch*(EcD2(X,A) - KL(self.mu.a, self.logvar.a))
                 results[e][b] = loss
 
-                delta_0 = self.decoder.backpropagate(step, self.loss.partial(A,X), update = True)
-
+                delta_0 = self.decoder.backpropagate(step,1/batch*EcD2.partial(X,A,respect_to="y"), update_parameters = True)
                 # We compute delta mu and delta var
-                delta_mu = self.mu.backpropagation(delta_0)
+                
+                delta_mu = self.mu.backpropagation(delta_0 - 1/batch*KL.partial(self.mu.a, self.logvar.a, respect = "mean"))
                 self.mu.update_parameters(learning_rate=step)
-                delta_var = self.mu.backpropagation(delta_0 * self.epsilon * np.exp(self.logvar.a))
+                #breakpoint()
+                delta_var = self.logvar.backpropagation(delta_0 * self.epsilon * np.exp(self.logvar.a) - 1/batch*KL.partial(self.mu.a, self.logvar.a, respect = "logvar"))
                 self.logvar.update_parameters(learning_rate=step)
+                #breakpoint()
+                delta_combined = delta_mu+ delta_var
+                self.encoder.backpropagate(step, delta = delta_combined, update_parameters = True)
+                b+=1
+                
+            mean_loss.append(np.mean(list(results[e].values())))
+        return mean_loss, results
+    def save_model(self):
+        """
+        This functions stores the parameters in a txt file with the following format.
+        """
+        pass
 
-                delta_combined = delta_mu@self.mu.weights.T + delta_var@self.logvar.weights.T
-                self.encoder.backpropagate(step, delta = delta_combined, update = True)
-    
+    def read_model(self):
+        pass
+
     # TODO      
     def __str__(self):
         raise TypeError("\033[1;31mFUNCTION NOT IMPLEMENTED\033[0m")

@@ -1,6 +1,10 @@
 from Models.utils import *
 import numpy as np
 
+"""
+File with simple test, to make clear in which dimensions we are working.
+"""
+
 # ===== ACTIVATION FUNCTIONS TESTS
 
 def ReLU_tst():
@@ -87,7 +91,7 @@ def Softmax_tst():
         assert P[i] == 1, f"Sum of rows {S(A)[i]} should be 1 and is {sum(S(A)[i])}"
     
     assert str(S) == "Softmax"
-    print("Sigmoind test: \033[1;32mPASSED\033[0m")
+    print("Softmax test: \033[1;32mPASSED\033[0m")
 
 # ===== LOSS FUNCTIONS TESTs
 
@@ -114,3 +118,43 @@ def CrossEntropy_tst():
         assert abs(E[i]-result[i]) < 1e-12, warning_message
     assert str(C) == "CrossEntropy"
     print("CrossEntropy test: \033[1;32mPASSED\033[0m")
+
+# TODO
+def KullbackLeibler_tst():
+    KL = KullbackLeibler()
+
+    "I hope it's correct by now "
+    assert str(KL) == "KullbackLeibler"
+    print("KullbackLeibler test: \033[1;32mPASSED\033[0m")
+
+# DONE
+def SqEuclideanDistance_tst():
+    x = np.array([0,1,2])
+    y = np.array([0,1,1])
+    E = SqEuclideanDistance()
+    warning_message = f"The distance of {x} and {y} should be {0.5}"
+    assert E(x,y) == 0.5, warning_message
+
+    p1 = E.partial(x,y, respect_to="x")
+    px = [0,0,1]
+    warning_message = f"Partial of 0.5*norm({x},{y}) respect to x should be {[0,0,1]}" 
+    for i in range(3): assert p1[i] == px[i], warning_message
+    
+    p2 = E.partial(x,y, respect_to="y")
+    py = [0,0,-1]
+    warning_message = f"Partial of 0.5*norm({x},{y}) respect to y should be {[0,0,-1]}" 
+    for i in range(3): assert p1[i] == px[i], warning_message
+        
+
+    X = np.array([[0,1,2],
+                 [0,0,0]])
+    Y = np.array([[0,1,1],
+                 [1,1,0]])
+    d = E(X,Y)
+    result = [0.5, 1]
+    for i in range(2): assert d[i] == result[i], "Wrong result computing with matrices"
+
+    assert str(E) == "SqEuclideanDistance"
+    
+    print("SqEuclideanDistance test: \033[1;32mPASSED\033[0m")
+

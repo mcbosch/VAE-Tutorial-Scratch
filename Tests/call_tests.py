@@ -6,3 +6,5 @@ Sigmoind_tst()
 Softmax_tst()
 # Loss Tests
 CrossEntropy_tst()
+SqEuclideanDistance_tst()
+KullbackLeibler_tst()
