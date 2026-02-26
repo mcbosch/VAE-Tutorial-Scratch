@@ -1,8 +1,8 @@
 import numpy as np
 import sys
 import os
-from Models.utils import *
-from Models.NN import *
+from nn.utils import *
+from nn.NN import *
 """
 If the reader doesn't have good knowledge of Variational AutoEncoders we recomend reeding all the comments. It has a brew eplanation. Also you can read the README.md file for detailed information. 
 """
@@ -140,7 +140,7 @@ class VAE:
                 #breakpoint()
                 
                 A = self.forward(X)
-                EcD2 = SqEuclideanDistance()
+                EcD2 = MSE()
                 KL = KullbackLeibler()
                 loss = 1/batch*(EcD2(X,A) - KL(self.mu.a, self.logvar.a))
                 results[e][b] = loss

@@ -2,7 +2,7 @@ import numpy as np
 
 # ================== ACTIVATION FUNCTIONS
 
-# DONE
+# DONE - test DONE
 class ReLU:
     # DONE
     def __call__(self, x):
@@ -16,8 +16,8 @@ class ReLU:
     def __str__(self):
         return "ReLU"
 
-# DONE
-class Sigmoind:
+# DONE - test DONE
+class Sigmoid:
 
     # DONE
     def __call__(self, x):
@@ -31,19 +31,33 @@ class Sigmoind:
         
     # DONE
     def __str__(self):
-        return "Sigmoind"
+        return "Sigmoid"
 
-# DONE
+# DONE - test DONE
 class Softmax:
     def __call__(self, x):
+        x = np.clip(x,-500,500)
         exps = np.exp(x)  # Maybe we have to add more estability
         if len(x.shape) == 1:
             return exps / np.sum(exps)
         return (exps.T / np.sum(exps, axis=1)).T
     
     def partial(self, x):
-         return np.diag(x) - np.outer(x, x)
-    
+
+        x = np.clip(x, -500, 500)
+        a = self(x)
+        s = x.shape
+        if len(s) == 1:
+            Id = np.eye(s[0])
+            return a[:,np.newaxis]*(Id-a)
+        elif len(s) == 2:
+            Id = np.array([np.eye(s[1]) for _ in range(s[0])])
+            return a[:,:,np.newaxis]*(Id-a[:,np.newaxis,:])
+        else:
+            raise KeyError("Softmax Partial only supports np.arrays of shape (j,) or (i,j)")
+        
+        
+
     def __str__(self):
         return "Softmax"
 
@@ -52,7 +66,7 @@ class Softmax:
 """
 The loss functions allows to receive as an input a matrix. Then it treats each row as an observation and computes the loss for that row. We do this to be able to work with batches. 
 """
-# DONE
+# DONE - Test Done
 class CrossEntropy:
     """
     The CrossEntropy object is a callable object that computes the CrossEntropy loss of a prediction and it's real value.
@@ -70,54 +84,54 @@ class CrossEntropy:
         -------
             Returns the CrossEntropy of each vector
         """
-        assert len(args) > 0, f"Two parameters expected; just {len(args)} given"
+        assert len(args) > 0, f"Two parameters expected; {len(args)} given"
         y_pred, y_true = args[0], args[1]
-        # We check the dimensionality (if it comes as )
-        if len(y_pred.shape) > 1:
-            # We have a batch of vectors; each row is a datapoint
-            return -np.sum(y_true * np.log(y_pred + 1e-13), axis = 1)  # evitar log(0)
-        else:
-            return -np.sum(y_true * np.log(y_pred + 1e-13))
+        # We check the dimensionality (if it comes as batch of vectors )
+        batch = len(y_pred) if len(y_pred.shape) > 1 else 1
+        # We have a batch of vectors; each row is a datapoint
+        return -np.sum(y_true * np.log(y_pred + 1e-13))/batch 
+        
 
     def partial(self, *args, activated_neurons=True):
     
         assert len(args) > 0, f"Two parameters expected; just {len(args)} given"
         y_pred, y_true = args[0], args[1]
+        batch = len(y_pred) if len(y_pred.shape) > 1 else 1
         if activated_neurons: # Computes the partial with respect the activated neurons
-            pass
+            return - y_true / (batch*(y_pred+1e-13)) # Computationally inestable
         else: # Computes the partial with respect the non-activated neurons when we use as activation function a Softmax
-            return y_pred - y_true
+            return (y_pred - y_true)/batch
        
     def __str__(self):
         return "CrossEntropy"
 
-# DONE
-class SqEuclideanDistance:
+# DONE - test DONE
+class MSE:
 
     def __init__(self):
         self.valid_respect_to = ["x","y"]
+
     def __call__(self, *args):
         X, Y = args[0], args[1]
+        batch = len(X) if len(X.shape) > 1 else 1
         dif = (X - Y)**2
-        if len(dif.shape) == 1:
-            return np.sum(0.5*dif)
-        else:
-            return 0.5*np.sum(dif,axis=1)
+        return 0.5*np.sum(dif)/batch
         
-    def partial(self, *args, respect_to = "y"):
+    def partial(self, *args, respect_to = "x"):
         if respect_to not in self.valid_respect_to:
             raise KeyError(f"Please introduce a valid input for 'respect_to'\nOptions: {self.valid_respect_to}")
         
         x, y = args[0], args[1]
+        batch = len(x) if len(x.shape) > 1 else 1
         if respect_to == "y":
-            return y-x
+            return (y-x)/batch
         elif respect_to == "x":
-            return x-y
+            return (x-y)/batch
 
     def __str__(self):
-        return "SqEuclideanDistance"
+        return "MSE"
 
-# DONE TODO - test
+# DONE TODO - test (for VAE)
 class KullbackLeibler:
     """
     Computes the Kullback-Leibler Divergence of two normals.
@@ -155,6 +169,7 @@ class KullbackLeibler:
 
 # TODO - test
 def split(data, train_size = 0.8, seed = None):
+        # Extend for pandas data
         if seed != None: 
             np.random.seed(seed)
         
@@ -189,15 +204,19 @@ def random_batches(data, batch_size):
     """
     data = list(data)  # make sure we can index
     n = len(data)
-    
+
     indices = np.random.permutation(n)
     
     batches = []
     for start in range(0, n, batch_size):
         batch_indices = indices[start:start + batch_size]
-        batch = [data[i] for i in batch_indices]
+        batch_x, batch_y = [], []
+        for i in batch_indices:
+            batch_x.append(data[i][0])
+            batch_y.append(data[i][1])
+        batch = (np.array(batch_x), np.array(batch_y))
         batches.append(batch)
-    return np.array(batches)
+    return batches
 
 # TODO - test
 def to_one_hot(n, label):
@@ -213,3 +232,4 @@ def to_cov_matrix(log_var, dim_matrix = 1):
         return np.diag(np.exp(log_var))
     else:
         raise TypeError("We have not yet implemented a full cov matrix option")
+    
