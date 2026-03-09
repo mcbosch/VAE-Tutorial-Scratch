@@ -1,4 +1,4 @@
-from Models.VAE import *
+from nn.VAE import *
 from keras.datasets import mnist
 import matplotlib.pyplot as plt
 # Load data
@@ -12,22 +12,22 @@ x_test  = x_test.astype(np.float32) / 255.0
 # Flatten images to vectors
 x_train = x_train.reshape(len(x_train), -1)  # (60000, 784)
 x_test  = x_test.reshape(len(x_test), -1)    # (10000, 784)
-D, _ = split(x_train, 0.1)
-
 
 model = VAE(784, 
             n_hidden_1 = 2, 
             n_hidden_2 = 2, 
-            dimensions_1 = [1000, 500],
-            mu_activation = "Sigmoind",
-            logvar_activation = "Sigmoind",
+            dimensions_1 = [524, 124],
+            mu_activation = "ReLU",
+            logvar_activation = "ReLU",
             activations_1 = ["ReLU", "ReLU"],
-            dimensions_2 = [500, 1000],
+            dimensions_2 = [124, 524],
             activations_2 = ["ReLU", "ReLU", "Sigmoind"],
             latent_dim = 124)
 
-mean_loss, results = model.train(D)
+mean_loss, results = model.train(x_train)
 
 plt.plot(list(range(100)), mean_loss)
 plt.show()
+
+# Run loss over test
 

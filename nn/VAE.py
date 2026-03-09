@@ -110,8 +110,6 @@ class VAE:
         self.latent_dim = latent_dim
         self.latent_vars = np.zeros(shape = (latent_dim, ))
         self.epsilon = np.zeros(shape = (latent_dim, ))
-        self.loss = CrossEntropy()  # We have to define a loss that has the ELBO 
-
     # DONE
     def forward(self, x):
             a = self.encoder.forward(x)
@@ -130,6 +128,8 @@ class VAE:
         
         results = {}
         mean_loss = []
+        # TODO Add ADAM momentums and parapeters
+        # Incorporate batches
         for e in range(epochs):
             print(f"Epoch: {e}")
             M = random_batches(D, batch)
@@ -142,16 +142,16 @@ class VAE:
                 A = self.forward(X)
                 EcD2 = MSE()
                 KL = KullbackLeibler()
-                loss = 1/batch*(EcD2(X,A) - KL(self.mu.a, self.logvar.a))
+                loss = 1/batch*(EcD2(X,A) + KL(self.mu.activation(self.mu.z), self.logvar.a))
                 results[e][b] = loss
 
-                delta_0 = self.decoder.backpropagate(step,1/batch*EcD2.partial(X,A,respect_to="y"), update_parameters = True)
+                delta_0 = self.decoder.backpropagate(1/batch*EcD2.partial(X,A,respect_to="y"),steo=step, update_parameters = True)
                 # We compute delta mu and delta var
                 
-                delta_mu = self.mu.backpropagation(delta_0 - 1/batch*KL.partial(self.mu.a, self.logvar.a, respect = "mean"))
+                delta_mu = self.mu.backpropagation(delta_0 - 1/batch*KL.partial(self.mu.activation(self.mu.z), self.logvar.a, respect = "mean"))
                 self.mu.update_parameters(learning_rate=step)
                 #breakpoint()
-                delta_var = self.logvar.backpropagation(delta_0 * self.epsilon * np.exp(self.logvar.a) - 1/batch*KL.partial(self.mu.a, self.logvar.a, respect = "logvar"))
+                delta_var = self.logvar.backpropagation(delta_0 * self.epsilon * np.exp(self.logvar.a) - 1/batch*KL.partial(self.mu.activation(self.mu.z), self.logvar.a, respect = "logvar"))
                 self.logvar.update_parameters(learning_rate=step)
                 #breakpoint()
                 delta_combined = delta_mu+ delta_var
@@ -171,9 +171,9 @@ class VAE:
 
     # TODO      
     def __str__(self):
-        raise TypeError("\033[1;31mFUNCTION NOT IMPLEMENTED\033[0m")
+        raise NotImplementedError("\033[1;31mFUNCTION NOT IMPLEMENTED\033[0m")
 
     # TODO
     def description(self):
-        raise TypeError("\033[1;31mFUNCTION NOT IMPLEMENTED\033[0m")
+        raise NotImplementedError("\033[1;31mFUNCTION NOT IMPLEMENTED\033[0m")
 
